@@ -1,0 +1,4276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로그 자동 작성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 1.25em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .login-area {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-right: 10px;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: rotate(90deg);
+        }
+
+        .login-btn, .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-btn:hover, .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .user-info {
+            color: white;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .header-nav {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+        }
+
+        .keyword-discovery-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .keyword-discovery-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .keyword-discovery-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 키워드발굴 화면 스타일 */
+        .keyword-discovery-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .keyword-discovery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .keyword-discovery-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .keyword-discovery-header h1 {
+            font-size: 2.5em;
+            margin: 20px 0 10px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .keyword-discovery-header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .keyword-discovery-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .new-keyword-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+        
+        .new-keyword-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .new-keyword-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            background: linear-gradient(135deg, #ff5252 0%, #ff3742 100%);
+        }
+        
+        .new-keyword-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .new-keyword-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .search-section {
+            margin-bottom: 40px;
+        }
+
+        .search-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .keyword-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .keyword-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .discovery-results {
+            margin: 40px 0;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .analysis-content, .keywords-list {
+            min-height: 100px;
+        }
+
+        .discovery-tips {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .discovery-tips h4 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .discovery-tips ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .discovery-tips li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .discovery-tips li:before {
+            content: "💡";
+            position: absolute;
+            left: 0;
+        }
+
+        .discovery-logic-explanation {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .discovery-logic-explanation h5 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .logic-steps {
+            margin-bottom: 20px;
+        }
+
+        .logic-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            line-height: 1.6;
+        }
+
+        .discovery-tips-mini {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #b3e5fc;
+        }
+
+        .discovery-tips-mini h5 {
+            color: #0277bd;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .discovery-tips-mini ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .discovery-tips-mini li {
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .discovery-tips-mini li:before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .keyword-input {
+                min-width: 100%;
+            }
+            
+            .back-btn {
+                position: relative;
+                margin-bottom: 20px;
+            }
+            
+            .keyword-discovery-header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+        }
+
+        .login-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-modal h3 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1003;
+            backdrop-filter: blur(5px);
+        }
+
+        .settings-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .settings-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-header h3 {
+            margin: 0;
+            font-size: 1.4em;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .settings-body {
+            padding: 30px;
+        }
+
+        .settings-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #eee;
+            text-align: center;
+        }
+
+        .save-settings-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .save-settings-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .save-settings-btn:active {
+            transform: translateY(0);
+        }
+
+        .keyword-choice-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1004;
+            backdrop-filter: blur(5px);
+        }
+
+        .keyword-choice-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .keyword-choice-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .keyword-choice-header h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .keyword-choice-body {
+            padding: 30px;
+        }
+
+        .selected-keyword-info {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border-radius: 10px;
+            border: 1px solid #ffcccb;
+        }
+
+        .keyword-label {
+            font-size: 14px;
+            color: #666;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .selected-keyword {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e53e3e;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            box-shadow: 0 2px 8px rgba(229, 62, 62, 0.2);
+        }
+
+        .choice-description {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 16px;
+        }
+
+        .choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .choice-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .choice-btn:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .choice-btn.main-search-btn:hover {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .choice-btn.keyword-discovery-btn-choice:hover {
+            border-color: #9C27B0;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        }
+
+        .btn-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .btn-content {
+            flex: 1;
+        }
+
+        .btn-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .btn-description {
+            font-size: 13px;
+            color: #718096;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .keyword-choice-modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+            
+            .choice-buttons {
+                gap: 12px;
+            }
+            
+            .choice-btn {
+                padding: 15px;
+            }
+            
+            .btn-title {
+                font-size: 15px;
+            }
+            
+            .btn-description {
+                font-size: 12px;
+            }
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .login-form input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .login-form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .login-submit-btn {
+            flex: 1;
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-submit-btn:hover {
+            background: #1976D2;
+        }
+
+        .login-cancel-btn {
+            flex: 1;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-cancel-btn:hover {
+            background: #5a6268;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        .api-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .api-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .generate-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #e8f5e8;
+            border-radius: 10px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result h3 {
+            color: #2e7d32;
+            margin: 0;
+        }
+
+        .copy-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #1976D2;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: #4CAF50;
+        }
+        
+        .ai-generate-btn {
+            background: #9C27B0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .ai-generate-btn:hover {
+            background: #7B1FA2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+        }
+        
+        .ai-generate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .ai-generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .gemini-generate-btn {
+            background: #4285F4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .gemini-generate-btn:hover {
+            background: #3367D6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+        }
+        
+        .gemini-generate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .gemini-generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .ai-generate-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .second-generation-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .text-replacement-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .text-replacement-section h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 16px;
+        }
+        
+        .replacement-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .replacement-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .ai-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .ai-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .ai-result h3 {
+            color: white;
+            margin: 0;
+            font-size: 1.3em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .ai-result-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 20px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #333;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-height: 200px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .compare-btn {
+            background: #FF5722;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .compare-btn:hover {
+            background: #E64A19;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+        }
+        
+        .compare-btn:active {
+            transform: translateY(0);
+        }
+        
+        .comparison-result {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .comparison-header h3 {
+            color: #333;
+            margin: 0;
+            font-size: 1.3em;
+        }
+        
+        .comparison-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            line-height: 1.8;
+            font-size: 15px;
+            max-height: 700px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-paragraph {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #ddd;
+        }
+        
+        .original-text {
+            background: #f8f9fa;
+            border-left-color: #6c757d;
+            color: #212529;
+        }
+        
+        .ai-text {
+            background: #fff5f5;
+            border-left-color: #dc3545;
+            color: #dc3545;
+        }
+        
+        .paragraph-label {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        .blog-selection-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        
+        .blog-select-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 140px;
+            max-width: 180px;
+        }
+        
+        .blog-select-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .blog-select-btn:active {
+            transform: translateY(0);
+        }
+        
+        .blog-select-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .blog-select-btn.all-blogs {
+            background: #FF9800;
+            font-weight: 600;
+        }
+        
+        .blog-select-btn.all-blogs:hover {
+            background: #F57C00;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .blog-selection-buttons {
+                flex-direction: column;
+            }
+            
+            .blog-select-btn {
+                max-width: none;
+            }
+        }
+
+
+        .fetch-blogs-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .fetch-blogs-btn:hover {
+            background: #1976D2;
+            transform: translateY(-1px);
+        }
+
+        .fetch-blogs-btn:active {
+            transform: translateY(0);
+        }
+
+        .fetch-blogs-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .url-input-section {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid #e0f2e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .url-input-section h3 {
+            color: #2e7d32;
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .url-fetch-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .url-fetch-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .url-fetch-btn:active {
+            transform: translateY(0);
+        }
+
+        .url-fetch-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .blog-posts-results {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: #f0f8ff;
+            border-radius: 10px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .blog-posts-results h3 {
+            color: #1976D2;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .blog-post-item {
+            background: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e3f2fd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .blog-post-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .blog-post-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .blog-post-header input[type="radio"] {
+            margin-top: 4px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .blog-post-title {
+            font-weight: bold;
+            color: #1976D2;
+            font-size: 1.1em;
+            line-height: 1.4;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .blog-post-title:hover {
+            color: #1565C0;
+            text-decoration: underline;
+        }
+
+        .blog-post-content {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .blog-post-link {
+            font-size: 0.9em;
+            color: #2196F3;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .blog-post-link:hover {
+            text-decoration: underline;
+        }
+
+        .first-post-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .first-post-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .first-post-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+
+        .prompt-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-btn {
+            background: #6366F1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-btn:hover {
+            background: #5B57EB;
+            transform: translateY(-1px);
+        }
+
+        .prompt-btn.secondary {
+            background: #10B981;
+        }
+
+        .prompt-btn.secondary:hover {
+            background: #059669;
+        }
+
+        .prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .prompt-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        .prompt-modal h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .prompt-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .prompt-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-item:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .prompt-item-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+
+        .prompt-item-content {
+            color: #6c757d;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .prompt-form {
+            display: none;
+        }
+
+        .prompt-form.show {
+            display: block;
+        }
+
+        .prompt-form input,
+        .prompt-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-family: inherit;
+        }
+
+        .prompt-form input:focus,
+        .prompt-form textarea:focus {
+            outline: none;
+            border-color: #6366F1;
+        }
+
+        .prompt-form-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .result-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        .error {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #ffebee;
+            color: #c62828;
+            border-radius: 8px;
+            border-left: 5px solid #f44336;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #424242;
+            line-height: 1.5;
+        }
+
+        .search-results {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: #fff3e0;
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+        }
+
+        .search-results h3 {
+            color: #e65100;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .search-item {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ffcc02;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .search-item-title {
+            font-weight: bold;
+            color: #d84315;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .search-item-content {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .search-item-link {
+            font-size: 0.9em;
+            color: #1976d2;
+            text-decoration: none;
+        }
+
+        .search-item-link:hover {
+            text-decoration: underline;
+        }
+
+
+        .keyword-input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .keyword-input-section input {
+            width: 70%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .keyword-analyze-btn {
+            background: #9C27B0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .keyword-analyze-btn:hover {
+            background: #7B1FA2;
+        }
+
+        .keyword-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .keyword-result-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .keyword-result-card h4 {
+            color: #9C27B0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .keyword-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .keyword-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 15px;
+        }
+
+        .keyword-item:last-child {
+            border-bottom: none;
+        }
+
+        .keyword-item > div:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .keyword-name {
+            font-weight: bold;
+            color: #333;
+            word-wrap: break-word;
+            word-break: break-all;
+            line-height: 1.4;
+            max-width: 200px;
+        }
+
+        .keyword-stats {
+            display: flex;
+            gap: 8px;
+            font-size: 11px;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 120px;
+        }
+
+        @media (min-width: 768px) {
+            .keyword-stats {
+                flex-direction: row;
+                align-items: center;
+                font-size: 12px;
+                gap: 10px;
+                min-width: 200px;
+            }
+        }
+
+        .keyword-volume {
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .keyword-competition {
+            background: #FF9800;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .keyword-competition.low {
+            background: #4CAF50;
+        }
+
+        .keyword-competition.medium {
+            background: #FF9800;
+        }
+
+        .keyword-competition.high {
+            background: #f44336;
+        }
+
+        .keyword-select-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .keyword-select-btn:hover {
+            background: #1976D2;
+        }
+
+        .keyword-usage-guide {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .keyword-usage-guide h3 {
+            color: #9C27B0;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .usage-steps {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .usage-step {
+            display: flex;
+            align-items: flex-start;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #9C27B0;
+        }
+
+        .step-number {
+            background: #9C27B0;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            color: #333;
+            margin: 0 0 8px 0;
+            font-size: 1.1em;
+        }
+
+        .step-content p {
+            color: #666;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .usage-tips {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .usage-tips h4 {
+            color: #1976D2;
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+        }
+
+        .usage-tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .usage-tips li {
+            color: #424242;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .usage-tips li:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div class="header-nav">
+                    <button class="keyword-discovery-btn" onclick="showKeywordDiscovery()">🔍 키워드발굴</button>
+                </div>
+                <div class="login-area" id="loginArea">
+                    <button class="login-btn" id="loginBtn" onclick="showLoginModal()">👤 로그인</button>
+                    <button class="settings-btn" id="settingsBtn" onclick="showSettingsModal()" title="설정">⚙️</button>
+                </div>
+            </div>
+            <h1>블로그 자동 작성기</h1>
+        </div>
+
+        <div class="form-container">
+            <div class="info-box">
+                <h4>💡 사용 방법</h4>
+                <p><strong>네이버 검색 API와 Claude AI를 활용한 SEO 최적화 블로그 글 생성</strong></p>
+                <p>키워드를 입력하고 네이버 검색 API와 Claude API 키를 입력하면, 해당 키워드로 네이버 블로그를 검색하여 참고 자료를 수집하고, SEO 최적화된 2000자 분량의 블로그 글을 자동으로 생성합니다.</p>
+            </div>
+
+            <form id="blogForm">
+                <div class="form-group">
+                    <label for="keyword">검색 키워드</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="keyword" name="keyword" placeholder="블로그 글 주제 키워드를 입력하세요" required style="flex: 1;">
+                    </div>
+                </div>
+
+
+
+
+                <button type="button" class="fetch-blogs-btn" onclick="fetchBlogPosts()">
+                    📄 블로그글 가져오기
+                </button>
+
+
+            </form>
+
+            <div class="blog-posts-results" id="blogPostsResults">
+                <h3>📄 가져온 블로그 글 목록</h3>
+                <div id="blogPostsList"></div>
+                <div class="blog-selection-buttons" id="blogSelectionButtons" style="display: none;">
+                    <button type="button" class="blog-select-btn" onclick="scrapeSelectedBlog()">
+                        📄 선택된내용 가져오기
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-results" id="searchResults">
+                <h3>📋 수집된 네이버 블로그 검색 결과</h3>
+                <div id="searchResultsList"></div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>네이버에서 검색 중이고 Claude AI가 블로그 글을 생성하고 있습니다...<br>잠시만 기다려주세요.</p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <!-- URL 입력 섹션 -->
+            <div class="url-input-section">
+                <h3>🔗 직접 URL 입력</h3>
+                <div class="form-group">
+                    <input type="url" id="directUrlInput" placeholder="네이버 블로그 URL을 입력하세요 (예: https://blog.naver.com/blogid/123456)" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;">
+                </div>
+                <button type="button" class="url-fetch-btn" onclick="fetchFromDirectUrl()">
+                    🔗 URL에서 글 가져오기
+                </button>
+            </div>
+
+            <div class="result" id="result">
+                <div class="result-header">
+                    <h3>📄 스크랩된글</h3>
+                    <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">
+                        📋 복사하기
+                    </button>
+                </div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+            
+            <!-- AI 프롬프트 섹션 -->
+            <div class="ai-prompt-section" id="aiPromptSection" style="display: none;">
+                <h3>🤖 AI 프롬프트 설정</h3>
+                <div class="form-group">
+                    <label for="aiPrompt">AI 프롬프트</label>
+                    <textarea id="aiPrompt" name="aiPrompt" rows="16" placeholder="AI가 어떤 스타일로 글을 작성하길 원하는지 구체적으로 설명해주세요. 예: '초보자도 이해하기 쉽게 친근한 말투로 작성해주세요', '전문적이고 신뢰할 수 있는 내용으로 작성해주세요' 등" required></textarea>
+                    <div class="prompt-controls">
+                        <button type="button" class="prompt-btn" onclick="showPromptModal()">📝 AI 프롬프트 조회</button>
+                    </div>
+                    
+                    <!-- 텍스트 대체 필드들 -->
+                    <div class="text-replacement-section">
+                        <h4>🔄 텍스트 대체 (선택사항)</h4>
+                        <div class="replacement-fields">
+                            <div class="form-group">
+                                <label for="replaceText">대체할텍스트</label>
+                                <input type="text" id="replaceText" name="replaceText" placeholder="스크랩된 글에서 바꿀 텍스트를 입력하세요">
+                            </div>
+                            <div class="form-group">
+                                <label for="newText">새로운텍스트</label>
+                                <input type="text" id="newText" name="newText" placeholder="새로 바꿀 텍스트를 입력하세요">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-generate-buttons">
+                    <button type="button" class="ai-generate-btn" id="aiGenerateBtn" onclick="generateAIContent()" style="display: none;">
+                        🤖 Claude로 글생성하기
+                    </button>
+                    <button type="button" class="gemini-generate-btn" id="geminiGenerateBtn" onclick="generateGeminiContent()" style="display: none;">
+                        💎 Gemini로 글생성하기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI 생성된 글 섹션 -->
+            <div class="ai-result" id="aiResult" style="display: none;">
+                <div class="ai-result-header">
+                    <h3>✨ 첫번째 생성된글</h3>
+                    <button class="copy-btn" id="aiCopyBtn" onclick="copyAIToClipboard()">
+                        📋 복사하기
+                    </button>
+                </div>
+                <div class="ai-result-content" id="aiResultContent"></div>
+                <button type="button" class="compare-btn" id="compareBtn" onclick="compareTexts()" style="display: none;">
+                    📊 원문과 비교하기
+                </button>
+                <div class="second-generation-buttons" id="secondGenerationButtons" style="display: none;">
+                    <button type="button" class="ai-generate-btn" id="generateFromFirstClaudeBtn" onclick="generateFromFirstClaude()">
+                        🤖 첫번째 생성된글로 Claude 글작성하기
+                    </button>
+                    <button type="button" class="gemini-generate-btn" id="generateFromFirstGeminiBtn" onclick="generateFromFirstGemini()">
+                        💎 첫번째 생성된글로 Gemini 글작성하기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 두번째 AI 생성된 글 섹션 -->
+            <div class="ai-result" id="aiResult2" style="display: none;">
+                <div class="ai-result-header">
+                    <h3>✨ 두번째 생성된글</h3>
+                    <button class="copy-btn" id="aiCopyBtn2" onclick="copyAI2ToClipboard()">
+                        📋 복사하기
+                    </button>
+                </div>
+                <div class="ai-result-content" id="aiResultContent2"></div>
+                <button type="button" class="compare-btn" id="compareBtn2" onclick="compareTexts2()" style="display: none;">
+                    📊 원문과 비교하기
+                </button>
+            </div>
+            
+            <!-- 원문과 비교하기 섹션 -->
+            <div class="comparison-result" id="comparisonResult" style="display: none;">
+                <div class="comparison-header">
+                    <h3>📊 원문과 비교하기</h3>
+                </div>
+                <div class="comparison-content" id="comparisonContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 프롬프트 관리 모달 -->
+    <div class="prompt-modal" id="promptModal">
+        <div class="prompt-modal-content">
+            <button class="close-modal" onclick="closePromptModal()">×</button>
+            
+            <!-- 프롬프트 목록 보기 -->
+            <div id="promptListView">
+                <h3>💡 저장된 AI 프롬프트 목록</h3>
+                <div class="prompt-list" id="promptList">
+                    <!-- 프롬프트 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+                <div class="prompt-form-buttons">
+                    <button type="button" class="prompt-btn secondary" onclick="showNewPromptForm()">➕ 새 프롬프트 추가</button>
+                    <button type="button" class="prompt-btn" onclick="closePromptModal()">닫기</button>
+                </div>
+            </div>
+
+            <!-- 프롬프트 등록/수정 폼 -->
+            <div class="prompt-form" id="promptForm">
+                <h3 id="promptFormTitle">🆕 새 AI 프롬프트 등록</h3>
+                <form id="promptFormElement">
+                    <input type="hidden" id="promptId" name="promptId">
+                    <input type="text" id="promptTitle" name="title" placeholder="프롬프트 제목 (예: 친근한 블로그 스타일)" required>
+                    <textarea id="promptContent" name="content" rows="4" placeholder="AI 프롬프트 내용을 입력하세요" required></textarea>
+                    <div class="prompt-form-buttons">
+                        <button type="button" class="prompt-btn" onclick="cancelPromptForm()">취소</button>
+                        <button type="submit" class="prompt-btn secondary" id="promptSubmitBtn">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 키워드발굴 화면 -->
+    <div class="keyword-discovery-page" id="keywordDiscoveryPage" style="display: none;">
+        <div class="keyword-discovery-container">
+            <div class="keyword-discovery-header">
+                <button class="back-btn" onclick="hideKeywordDiscovery()">← 되돌아가기</button>
+                <h1>🔍 키워드발굴</h1>
+                <p>효과적인 키워드를 발굴하여 블로그 콘텐츠를 최적화하세요</p>
+            </div>
+
+            <div class="keyword-discovery-content">
+                <div class="new-keyword-section">
+                    <button class="new-keyword-btn" onclick="discoverNewKeywords()">🆕 신규키워드 검색</button>
+                </div>
+                
+                <div class="search-section">
+                    <h3>🎯 키워드 검색</h3>
+                    <div class="search-form">
+                        <input type="text" id="keywordDiscoveryInput" placeholder="기본 키워드를 입력하세요 (예: 에어컨청소, 카페창업)" class="keyword-input">
+                        <button class="search-btn" onclick="startKeywordDiscovery()">🔍 키워드 발굴 시작</button>
+                    </div>
+                </div>
+
+                <div class="discovery-results" id="discoveryResults" style="display: none;">
+                    <div class="results-grid">
+                        <div class="result-section">
+                            <h4>📊 기본 키워드 분석</h4>
+                            <div id="basicAnalysis" class="analysis-content">
+                                <div class="discovery-logic-explanation">
+                                    <h5>🚀 신규 키워드 발굴 로직</h5>
+                                    <div class="logic-steps">
+                                        <div class="logic-item">
+                                            <strong>1️⃣ 연관 키워드 분석:</strong> 입력 키워드의 동의어, 유의어, 관련 업종 용어를 자동 추출하여 키워드 풀을 확장합니다.
+                                        </div>
+                                        <div class="logic-item">
+                                            <strong>2️⃣ 롱테일 키워드 생성:</strong> "주요키워드 + 수식어 + 목적어" 패턴으로 검색 의도가 명확한 3-5단어 조합을 생성합니다.
+                                        </div>
+                                        <div class="logic-item">
+                                            <strong>3️⃣ 지역 기반 키워드:</strong> "지역명 + 서비스/상품명" 패턴으로 로컬 SEO 최적화 키워드를 발굴합니다.
+                                        </div>
+                                        <div class="logic-item">
+                                            <strong>4️⃣ 의도 기반 분류:</strong> 정보성("방법", "팁"), 구매성("가격", "할인"), 비교성("vs", "차이"), 문제해결("해결", "문제") 키워드로 분류합니다.
+                                        </div>
+                                        <div class="logic-item">
+                                            <strong>5️⃣ 트렌드 키워드:</strong> 현재 시기의 이벤트, 시즌, 사회적 이슈와 연결된 키워드를 자동 추천합니다.
+                                        </div>
+                                        <div class="logic-item">
+                                            <strong>6️⃣ 경쟁 분석:</strong> 네이버 검색 상위 페이지 분석을 통해 경쟁이 낮은 대안 키워드를 발굴합니다.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="discovery-tips-mini">
+                                        <h5>💡 키워드 활용 핵심 팁</h5>
+                                        <ul>
+                                            <li><strong>타겟팅:</strong> 브로드보다 롱테일 키워드가 전환율이 높음</li>
+                                            <li><strong>SEO:</strong> 자연스러운 키워드 배치, 과도한 스터핑 금지</li>
+                                            <li><strong>모니터링:</strong> 정기적 성과 분석 및 트렌드 업데이트</li>
+                                            <li><strong>계절성:</strong> 시기별 이벤트에 맞춘 콘텐츠 준비</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>🔗 연관 키워드</h4>
+                            <div id="relatedKeywords" class="keywords-list"></div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>📈 롱테일 키워드</h4>
+                            <div id="longTailKeywords" class="keywords-list"></div>
+                        </div>
+                        
+                        <div class="result-section">
+                            <h4>🚀 급상승 키워드</h4>
+                            <div id="trendingKeywords" class="keywords-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="discovery-tips">
+                    <h4>💡 키워드발굴 팁</h4>
+                    <ul>
+                        <li><strong>롱테일 키워드:</strong> 3-4단어 조합으로 경쟁이 낮고 전환율이 높습니다</li>
+                        <li><strong>지역 키워드:</strong> "지역명 + 서비스"로 로컬 SEO에 효과적입니다</li>
+                        <li><strong>문제 해결 키워드:</strong> "방법", "해결", "팁" 등을 포함한 키워드입니다</li>
+                        <li><strong>계절성 키워드:</strong> 시기별 트렌드를 고려한 키워드를 선택하세요</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-modal-content">
+            <h3>🔐 로그인</h3>
+            <form class="login-form" id="loginForm">
+                <input type="text" id="loginId" name="id" placeholder="아이디" required>
+                <input type="password" id="loginPassword" name="password" placeholder="비밀번호" required>
+                <div class="login-form-buttons">
+                    <button type="button" class="login-cancel-btn" onclick="closeLoginModal()">취소</button>
+                    <button type="submit" class="login-submit-btn">로그인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-modal-content">
+            <div class="settings-header">
+                <h3>⚙️ API 설정</h3>
+                <button class="close-modal" onclick="closeSettingsModal()">×</button>
+            </div>
+            
+            <div class="settings-body">
+                <div class="api-section">
+                    <h4>🔑 네이버 검색 API 설정</h4>
+                    <div class="form-group">
+                        <label for="naverClientId">네이버 클라이언트 ID</label>
+                        <input type="text" id="naverClientId" name="naverClientId" placeholder="네이버 개발자센터에서 발급받은 클라이언트 ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="naverClientSecret">네이버 클라이언트 시크릿</label>
+                        <input type="password" id="naverClientSecret" name="naverClientSecret" placeholder="네이버 개발자센터에서 발급받은 클라이언트 시크릿" required>
+                    </div>
+                </div>
+
+                <div class="api-section">
+                    <h4>🤖 Claude API 설정</h4>
+                    <div class="form-group">
+                        <label for="claudeApiKey">Claude API 키</label>
+                        <input type="password" id="claudeApiKey" name="claudeApiKey" placeholder="Anthropic Console에서 발급받은 Claude API 키" required>
+                    </div>
+                </div>
+
+                <div class="api-section">
+                    <h4>🔮 Gemini API 설정</h4>
+                    <div class="form-group">
+                        <label for="geminiApiKey">Gemini API 키</label>
+                        <input type="password" id="geminiApiKey" name="geminiApiKey" placeholder="Google AI Studio에서 발급받은 Gemini API 키">
+                    </div>
+                    <div class="form-group">
+                        <small style="color: #666; font-size: 12px;">
+                            💡 Gemini API는 대안 AI 모델로 사용됩니다. Claude API가 없거나 실패시 자동으로 사용됩니다.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-footer">
+                <button class="save-settings-btn" onclick="saveApiSettings()">💾 설정 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 키워드 선택 모달 -->
+    <div class="keyword-choice-modal" id="keywordChoiceModal">
+        <div class="keyword-choice-modal-content">
+            <div class="keyword-choice-header">
+                <h3>🎯 키워드 적용 위치 선택</h3>
+                <button class="close-modal" onclick="closeKeywordChoiceModal()">×</button>
+            </div>
+            
+            <div class="keyword-choice-body">
+                <div class="selected-keyword-info">
+                    <span class="keyword-label">선택된 키워드:</span>
+                    <span class="selected-keyword" id="selectedKeywordText"></span>
+                </div>
+                
+                <div class="choice-description">
+                    <p>이 키워드를 어느 위치에 적용하시겠습니까?</p>
+                </div>
+                
+                <div class="choice-buttons">
+                    <button class="choice-btn main-search-btn" onclick="applyToMainSearch()">
+                        <div class="btn-icon">📄</div>
+                        <div class="btn-content">
+                            <div class="btn-title">본문 검색키워드 필드</div>
+                            <div class="btn-description">메인 화면의 검색 키워드에 입력하고 블로그 글 가져오기 실행</div>
+                        </div>
+                    </button>
+                    
+                    <button class="choice-btn keyword-discovery-btn-choice" onclick="applyToKeywordDiscovery()">
+                        <div class="btn-icon">🔍</div>
+                        <div class="btn-content">
+                            <div class="btn-title">키워드발굴 필드</div>
+                            <div class="btn-description">키워드발굴 화면의 입력창에 입력하고 키워드 발굴 재실행</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 로그인 상태 관리
+        let currentUser = null;
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('DOMContentLoaded', async function() {
+            // 로그인 상태 확인
+            checkLoginStatus();
+            
+            // 기본 사용자 데이터 초기화 (최초 실행시)
+            await initializeDefaultUsers();
+            try {
+                const response = await fetch('/load-api-keys');
+                const data = await response.json();
+                
+                if (data.success && data.apiData) {
+                    document.getElementById('naverClientId').value = data.apiData.naverClientId || '';
+                    document.getElementById('naverClientSecret').value = data.apiData.naverClientSecret || '';
+                    document.getElementById('claudeApiKey').value = data.apiData.claudeApiKey || '';
+                    document.getElementById('geminiApiKey').value = data.apiData.geminiApiKey || '';
+                    
+                    // API 키가 이미 저장되어 있어도 기본적으로 설정은 숨겨둠
+                    // 사용자가 필요할 때만 '설정보이기' 버튼을 클릭하여 확인
+                }
+            } catch (error) {
+                console.log('저장된 API 키가 없습니다.');
+            }
+        });
+
+        // 기존 블로그 생성 폼 제출 이벤트 리스너 제거됨
+
+        function showSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        async function saveApiSettings() {
+            const naverClientId = document.getElementById('naverClientId').value;
+            const naverClientSecret = document.getElementById('naverClientSecret').value;
+            const claudeApiKey = document.getElementById('claudeApiKey').value;
+            const geminiApiKey = document.getElementById('geminiApiKey').value;
+
+            try {
+                const response = await fetch('/save-api-keys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        naverClientId,
+                        naverClientSecret,
+                        claudeApiKey,
+                        geminiApiKey
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ API 설정이 저장되었습니다!');
+                    closeSettingsModal();
+                } else {
+                    alert('❌ API 설정 저장에 실패했습니다: ' + data.error);
+                }
+            } catch (error) {
+                console.error('API 설정 저장 오류:', error);
+                alert('❌ API 설정 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        function displaySearchResults(searchResults) {
+            const resultsList = document.getElementById('searchResultsList');
+            resultsList.innerHTML = '';
+            
+            searchResults.forEach((item, index) => {
+                const title = item.title.replace(/<[^>]*>/g, '');
+                const description = item.description.replace(/<[^>]*>/g, '');
+                
+                const searchItem = document.createElement('div');
+                searchItem.className = 'search-item';
+                searchItem.innerHTML = `
+                    <div class="search-item-title">${index + 1}. ${title}</div>
+                    <div class="search-item-content">${description}</div>
+                    <a href="${item.link}" target="_blank" class="search-item-link">원문 보기 →</a>
+                `;
+                resultsList.appendChild(searchItem);
+            });
+        }
+
+        async function copyToClipboard() {
+            const copyBtn = document.getElementById('copyBtn');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (!resultContent.textContent) {
+                alert('복사할 내용이 없습니다.');
+                return;
+            }
+            
+            try {
+                // 최신 브라우저의 Clipboard API 사용
+                await navigator.clipboard.writeText(resultContent.textContent);
+                
+                // 버튼 상태 변경
+                copyBtn.textContent = '✅ 복사완료!';
+                copyBtn.classList.add('copied');
+                
+                // 2초 후 원래 상태로 복원
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 복사하기';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+                
+            } catch (err) {
+                // Clipboard API가 지원되지 않는 경우 대체 방법 사용
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = resultContent.textContent;
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    copyBtn.textContent = '✅ 복사완료!';
+                    copyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋 복사하기';
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                    
+                } catch (fallbackErr) {
+                    console.error('복사 실패:', fallbackErr);
+                    alert('복사에 실패했습니다. 수동으로 텍스트를 선택하여 복사해주세요.');
+                }
+            }
+        }
+
+        // AI 프롬프트 관리 함수들
+        let currentPrompts = [];
+
+        async function showPromptModal() {
+            await loadPrompts();
+            showPromptListView();
+            document.getElementById('promptModal').style.display = 'block';
+        }
+
+        function closePromptModal() {
+            document.getElementById('promptModal').style.display = 'none';
+        }
+
+        function showPromptListView() {
+            document.getElementById('promptListView').style.display = 'block';
+            document.getElementById('promptForm').classList.remove('show');
+        }
+
+        function showNewPromptForm() {
+            document.getElementById('promptFormTitle').textContent = '🆕 새 AI 프롬프트 등록';
+            document.getElementById('promptSubmitBtn').textContent = '저장';
+            document.getElementById('promptFormElement').reset();
+            document.getElementById('promptId').value = '';
+            
+            document.getElementById('promptListView').style.display = 'none';
+            document.getElementById('promptForm').classList.add('show');
+        }
+
+        function editPrompt(prompt) {
+            document.getElementById('promptFormTitle').textContent = '✏️ AI 프롬프트 수정';
+            document.getElementById('promptSubmitBtn').textContent = '수정';
+            document.getElementById('promptId').value = prompt.id;
+            document.getElementById('promptTitle').value = prompt.title;
+            document.getElementById('promptContent').value = prompt.content;
+            
+            document.getElementById('promptListView').style.display = 'none';
+            document.getElementById('promptForm').classList.add('show');
+        }
+
+        function cancelPromptForm() {
+            showPromptListView();
+        }
+
+        async function loadPrompts() {
+            try {
+                const response = await fetch('/api/prompts');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentPrompts = data.prompts;
+                    displayPrompts();
+                }
+            } catch (error) {
+                console.error('프롬프트 로드 실패:', error);
+                currentPrompts = [];
+                displayPrompts();
+            }
+        }
+
+        function displayPrompts() {
+            const promptList = document.getElementById('promptList');
+            
+            if (currentPrompts.length === 0) {
+                promptList.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">저장된 AI 프롬프트가 없습니다.</p>';
+                return;
+            }
+            
+            promptList.innerHTML = currentPrompts.map(prompt => `
+                <div class="prompt-item" onclick="selectPrompt('${prompt.id}')">
+                    <div class="prompt-item-title">${prompt.title}</div>
+                    <div class="prompt-item-content">${prompt.content}</div>
+                    <div style="margin-top: 10px;">
+                        <button type="button" class="prompt-btn" onclick="event.stopPropagation(); editPrompt(${JSON.stringify(prompt).replace(/"/g, '&quot;')})" style="margin-right: 10px; padding: 4px 8px; font-size: 12px;">수정</button>
+                        <button type="button" class="prompt-btn" onclick="event.stopPropagation(); deletePrompt('${prompt.id}')" style="background: #dc3545; padding: 4px 8px; font-size: 12px;">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectPrompt(promptId) {
+            const prompt = currentPrompts.find(p => p.id === promptId);
+            if (prompt) {
+                document.getElementById('aiPrompt').value = prompt.content;
+                closePromptModal();
+            }
+        }
+
+        async function deletePrompt(promptId) {
+            if (!confirm('이 프롬프트를 삭제하시겠습니까?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/prompts/${promptId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    await loadPrompts();
+                } else {
+                    alert('삭제에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('삭제 실패:', error);
+                alert('삭제에 실패했습니다.');
+            }
+        }
+
+        // 프롬프트 폼 제출 처리
+        document.getElementById('promptFormElement').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            const isEdit = !!data.promptId;
+            const url = isEdit ? `/api/prompts/${data.promptId}` : '/api/prompts';
+            const method = isEdit ? 'PUT' : 'POST';
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: data.title,
+                        content: data.content
+                    })
+                });
+                
+                const responseData = await response.json();
+                
+                if (responseData.success) {
+                    await loadPrompts();
+                    showPromptListView();
+                } else {
+                    alert(responseData.error || '저장에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장에 실패했습니다.');
+            }
+        });
+
+        // 로그인 관련 함수들
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateLoginUI();
+            }
+        }
+
+        function updateLoginUI() {
+            const loginArea = document.getElementById('loginArea');
+            
+            if (currentUser) {
+                loginArea.innerHTML = `
+                    <span class="user-info">👤 ${currentUser.id}님</span>
+                    <button class="logout-btn" onclick="logout()">로그아웃</button>
+                    <button class="settings-btn" id="settingsBtn" onclick="showSettingsModal()" title="설정">⚙️</button>
+                `;
+            } else {
+                loginArea.innerHTML = `
+                    <button class="login-btn" onclick="showLoginModal()">👤 로그인</button>
+                    <button class="settings-btn" id="settingsBtn" onclick="showSettingsModal()" title="설정">⚙️</button>
+                `;
+            }
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('loginForm').reset();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            updateLoginUI();
+        }
+
+        async function initializeDefaultUsers() {
+            try {
+                await fetch('/api/init-users', {
+                    method: 'POST'
+                });
+                console.log('기본 사용자 데이터 초기화 완료');
+            } catch (error) {
+                console.error('기본 사용자 데이터 초기화 실패:', error);
+            }
+        }
+
+        // 로그인 폼 제출 처리
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // 명시적으로 id와 password만 수집
+            const id = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!id || !password) {
+                alert('아이디와 비밀번호를 입력해주세요.');
+                return;
+            }
+            
+            const data = {
+                id: id,
+                password: password
+            };
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentUser = result.user;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateLoginUI();
+                    closeLoginModal();
+                    alert(`${currentUser.id}님, 환영합니다!`);
+                } else {
+                    alert(result.error || '로그인에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('로그인 오류:', error);
+                alert('로그인 처리 중 오류가 발생했습니다.');
+            }
+        });
+
+        // 가져온 블로그 글 저장 변수
+        let fetchedBlogPosts = [];
+
+        // 직접 URL에서 글 가져오기 함수
+        async function fetchFromDirectUrl() {
+            if (!currentUser) {
+                alert('로그인을 한 후에 사용하십시오');
+                return;
+            }
+
+            const urlInput = document.getElementById('directUrlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('URL을 입력해주세요.');
+                return;
+            }
+
+            // 네이버 블로그 URL 형식 검증
+            if (!url.includes('blog.naver.com') && !url.includes('m.blog.naver.com')) {
+                alert('네이버 블로그 URL만 지원됩니다.');
+                return;
+            }
+
+            const fetchBtn = document.querySelector('.url-fetch-btn');
+            const resultContent = document.getElementById('resultContent');
+            const resultContainer = document.getElementById('result');
+
+            // 버튼 비활성화 및 로딩 상태
+            fetchBtn.disabled = true;
+            fetchBtn.innerHTML = '🔄 가져오는 중...';
+            
+            resultContent.innerHTML = '<div style="text-align: center; padding: 20px;">🔄 URL에서 블로그 글을 가져오는 중...</div>';
+            resultContainer.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/scrape-blog-content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        url: url,
+                        title: 'URL에서 가져온 글'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.content) {
+                    // 스크랩된글 섹션에 직접 표시
+                    const formattedContent = formatTextWithLineBreaks(data.content);
+                    resultContent.innerHTML = formattedContent;
+                    
+                    // AI 생성 버튼들 표시
+                    const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+                    const geminiGenerateBtn = document.getElementById('geminiGenerateBtn');
+                    const aiPromptSection = document.getElementById('aiPromptSection');
+                    aiGenerateBtn.style.display = 'block';
+                    geminiGenerateBtn.style.display = 'block';
+                    aiPromptSection.style.display = 'block';
+                    
+                    // URL 입력창 초기화
+                    urlInput.value = '';
+                    
+                    console.log('[INFO] 직접 URL에서 글 가져오기 완료:', data.message || '');
+                    console.log(`[INFO] 가져온 글 길이: ${data.content.length}자, 소스: ${data.source}`);
+                } else {
+                    throw new Error(data.error || '컨텐츠를 가져올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('직접 URL 글 가져오기 오류:', error);
+                resultContent.innerHTML = '<div style="text-align: center; color: red;">직접 URL에서 글을 가져오는 중 오류가 발생했습니다.</div>';
+            } finally {
+                // 버튼 상태 복원
+                fetchBtn.disabled = false;
+                fetchBtn.innerHTML = '🔗 URL에서 글 가져오기';
+            }
+        }
+
+        // 블로그글 가져오기 함수
+        async function fetchBlogPosts() {
+            if (!currentUser) {
+                alert('로그인을 한 후에 사용하십시오');
+                return;
+            }
+
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword.trim()) {
+                alert('키워드를 입력해주세요.');
+                return;
+            }
+
+            const fetchBtn = document.querySelector('.fetch-blogs-btn');
+            const resultsContainer = document.getElementById('blogPostsResults');
+            const resultsList = document.getElementById('blogPostsList');
+
+            // 버튼 비활성화 및 로딩 상태
+            fetchBtn.disabled = true;
+            fetchBtn.innerHTML = '🔄 가져오는 중...';
+            
+            resultsList.innerHTML = '<div style="text-align: center; padding: 20px;">블로그 글을 가져오는 중...</div>';
+            resultsContainer.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/fetch-blog-posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ keyword: keyword })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    fetchedBlogPosts = data.blogPosts; // 블로그 글 데이터 저장
+                    displayBlogPosts(data.blogPosts);
+                } else {
+                    resultsList.innerHTML = '<div style="text-align: center; color: red;">가져오기 실패: ' + data.error + '</div>';
+                }
+            } catch (error) {
+                console.error('블로그글 가져오기 오류:', error);
+                resultsList.innerHTML = '<div style="text-align: center; color: red;">블로그글 가져오기 중 오류가 발생했습니다.</div>';
+            } finally {
+                // 버튼 상태 복원
+                fetchBtn.disabled = false;
+                fetchBtn.innerHTML = '📄 블로그글 가져오기';
+            }
+        }
+
+        function displayBlogPosts(blogPosts) {
+            const resultsList = document.getElementById('blogPostsList');
+            
+            if (blogPosts.length === 0) {
+                resultsList.innerHTML = '<div style="text-align: center; color: #666;">검색된 블로그 글이 없습니다.</div>';
+                document.getElementById('blogSelectionButtons').style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            blogPosts.forEach((post, index) => {
+                html += `
+                    <div class="blog-post-item">
+                        <div class="blog-post-header">
+                            <input type="radio" name="selectedBlog" value="${index}" id="blog_${index}" ${index === 0 ? 'checked' : ''}>
+                            <label for="blog_${index}" class="blog-post-title">${index + 1}. ${post.title}</label>
+                        </div>
+                        <div class="blog-post-content">${post.content}</div>
+                        <a href="${post.link}" target="_blank" class="blog-post-link">원문 보기 →</a>
+                    </div>
+                `;
+            });
+            
+            resultsList.innerHTML = html;
+            
+            // 블로그 선택 버튼들 표시
+            if (blogPosts.length > 0) {
+                const blogSelectionButtons = document.getElementById('blogSelectionButtons');
+                blogSelectionButtons.style.display = 'block';
+            }
+        }
+
+        async function scrapeSelectedBlog() {
+            // 선택된 라디오 버튼 찾기
+            const selectedRadio = document.querySelector('input[name="selectedBlog"]:checked');
+            if (!selectedRadio) {
+                alert('먼저 가져올 블로그 글을 선택해주세요.');
+                return;
+            }
+
+            const index = parseInt(selectedRadio.value);
+            
+            if (fetchedBlogPosts.length === 0) {
+                alert('먼저 블로그 글을 가져와주세요.');
+                return;
+            }
+
+            if (index >= fetchedBlogPosts.length) {
+                alert(`선택된 블로그가 없습니다. 총 ${fetchedBlogPosts.length}개의 블로그가 있습니다.`);
+                return;
+            }
+            
+            const selectedPost = fetchedBlogPosts[index];
+            const resultContent = document.getElementById('resultContent');
+            const result = document.getElementById('result');
+
+            // 버튼 비활성화
+            const button = document.querySelector('.blog-select-btn');
+            button.disabled = true;
+            button.innerHTML = '🔄 가져오는 중...';
+            
+            // 로딩 표시
+            resultContent.textContent = `선택된 글의 원문을 가져오는 중입니다...`;
+            result.style.display = 'block';
+
+            try {
+                // 먼저 원문 스크래핑 시도
+                const scrapingResponse = await fetch('/api/scrape-blog-content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        url: selectedPost.link,
+                        title: selectedPost.title
+                    })
+                });
+                
+                const scrapingData = await scrapingResponse.json();
+                
+                // 스크래핑이 성공하고 충분한 콘텐츠가 있으면 사용
+                if (scrapingData.success && scrapingData.source === 'direct_scraping' && scrapingData.length > 200) {
+                    // 제목과 본문을 함께 표시
+                    const fullContent = `# ${selectedPost.title}\n\n${scrapingData.content}`;
+                    const formattedContent = formatTextWithLineBreaks(fullContent);
+                    resultContent.textContent = formattedContent;
+                    if (scrapingData.message) {
+                        resultContent.textContent += `\n\n※ ${scrapingData.message}`;
+                    }
+                } else {
+                    // 스크래핑 실패 시 확장 검색 방식 사용
+                    console.log('[INFO] 원문 스크래핑 실패, 확장 검색 사용');
+                    
+                    const response = await fetch('/api/fetch-full-content', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            url: selectedPost.link,
+                            title: selectedPost.title
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // 제목과 본문을 함께 표시
+                        const fullContent = `# ${selectedPost.title}\n\n${data.content}`;
+                        const formattedContent = formatTextWithLineBreaks(fullContent);
+                        resultContent.textContent = formattedContent;
+                        if (data.message) {
+                            resultContent.textContent += `\n\n※ ${data.message}`;
+                        }
+                    } else {
+                        // 실패 시 기존 요약본에 제목 추가
+                        const fullContent = `# ${selectedPost.title}\n\n${selectedPost.content}`;
+                        const formattedSummary = formatTextWithLineBreaks(fullContent);
+                        resultContent.textContent = `선택된 글 원문 가져오기에 실패했습니다. 요약본을 표시합니다:\n\n${formattedSummary}`;
+                    }
+                }
+                
+                // AI 생성 버튼들 표시
+                const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+                const geminiGenerateBtn = document.getElementById('geminiGenerateBtn');
+                const aiPromptSection = document.getElementById('aiPromptSection');
+                aiGenerateBtn.style.display = 'block';
+                geminiGenerateBtn.style.display = 'block';
+                aiPromptSection.style.display = 'block';
+                
+                // 결과 섹션으로 스크롤
+                result.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('원문 가져오기 오류:', error);
+                // 오류 시 기존 요약본에 제목 추가
+                const fullContent = `# ${selectedPost.title}\n\n${selectedPost.content}`;
+                const formattedErrorSummary = formatTextWithLineBreaks(fullContent);
+                resultContent.textContent = `선택된 글 가져오기 중 오류가 발생했습니다. 요약본을 표시합니다:\n\n${formattedErrorSummary}`;
+            } finally {
+                // 버튼 상태 복원
+                button.disabled = false;
+                button.innerHTML = '📄 선택된내용 가져오기';
+            }
+        }
+
+        // 문장 끝에 줄바꿈 추가 함수
+        function formatTextWithLineBreaks(text) {
+            if (!text) return text;
+            
+            // 한국어 문장 끝 패턴들
+            const sentenceEndings = [
+                /다\./g,      // 다.
+                /다\s/g,      // 다 (공백)
+                /임\./g,      // 임.
+                /임\s/g,      // 임 (공백)
+                /어\./g,      // 어.
+                /어\s/g,      // 어 (공백)
+                /요\./g,      // 요.
+                /요\s/g,      // 요 (공백)
+                /음\./g,      // 음.
+                /음\s/g,      // 음 (공백)
+                /죠\./g,      // 죠.
+                /죠\s/g,      // 죠 (공백)
+                /네\./g,      // 네.
+                /네\s/g,      // 네 (공백)
+                /게\./g,      // 게.
+                /게\s/g,      // 게 (공백)
+                /지\./g,      // 지.
+                /지\s/g,      // 지 (공백)
+                /니\./g,      // 니.
+                /니\s/g,      // 니 (공백)
+                /까\./g,      // 까.
+                /까\s/g,      // 까 (공백)
+                /야\./g,      // 야.
+                /야\s/g,      // 야 (공백)
+                /아\./g,      // 아.
+                /아\s/g,      // 아 (공백)
+                /!\s/g,       // ! (느낌표)
+                /\?\s/g,      // ? (물음표)
+                /\.\.\.\s/g   // ... (말줄임표)
+            ];
+            
+            let formattedText = text;
+            
+            // 각 문장 끝 패턴에 대해 줄바꿈 추가
+            sentenceEndings.forEach(pattern => {
+                formattedText = formattedText.replace(pattern, (match) => {
+                    // 마지막 문자가 공백이면 제거하고 줄바꿈 추가
+                    const trimmedMatch = match.trim();
+                    return trimmedMatch + '\n\n';
+                });
+            });
+            
+            // 연속된 줄바꿈 정리 (3개 이상의 줄바꿈을 2개로)
+            formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
+            
+            // 앞뒤 공백 제거
+            formattedText = formattedText.trim();
+            
+            return formattedText;
+        }
+
+        // 개별 블로그 스크래핑 함수
+        async function scrapeBlogPost(index) {
+            if (fetchedBlogPosts.length === 0) {
+                alert('먼저 블로그 글을 가져와주세요.');
+                return;
+            }
+
+            if (index >= fetchedBlogPosts.length) {
+                alert(`${index + 1}번째 블로그가 없습니다. 총 ${fetchedBlogPosts.length}개의 블로그가 있습니다.`);
+                return;
+            }
+            
+            const selectedPost = fetchedBlogPosts[index];
+            const resultContent = document.getElementById('resultContent');
+            const result = document.getElementById('result');
+
+            // 모든 버튼 비활성화
+            const buttons = document.querySelectorAll('.blog-select-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // 로딩 표시
+            resultContent.textContent = `${index + 1}번째 글의 원문을 가져오는 중입니다...`;
+            result.style.display = 'block';
+
+            try {
+                // 먼저 원문 스크래핑 시도
+                const scrapingResponse = await fetch('/api/scrape-blog-content', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        url: selectedPost.link,
+                        title: selectedPost.title
+                    })
+                });
+                
+                const scrapingData = await scrapingResponse.json();
+                
+                // 스크래핑이 성공하고 충분한 콘텐츠가 있으면 사용
+                if (scrapingData.success && scrapingData.source === 'direct_scraping' && scrapingData.length > 200) {
+                    // 문장 끝에 줄바꿈을 추가하여 표시
+                    const formattedContent = formatTextWithLineBreaks(scrapingData.content);
+                    resultContent.textContent = formattedContent;
+                    if (scrapingData.message) {
+                        resultContent.textContent += `\n\n※ ${scrapingData.message}`;
+                    }
+                } else {
+                    // 스크래핑 실패 시 확장 검색 방식 사용
+                    console.log('[INFO] 원문 스크래핑 실패, 확장 검색 사용');
+                    
+                    const response = await fetch('/api/fetch-full-content', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            url: selectedPost.link,
+                            title: selectedPost.title
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // 확장 검색 결과에도 줄바꿈 형식 적용
+                        const formattedContent = formatTextWithLineBreaks(data.content);
+                        resultContent.textContent = formattedContent;
+                        if (data.message) {
+                            resultContent.textContent += `\n\n※ ${data.message}`;
+                        }
+                    } else {
+                        // 실패 시 기존 요약본도 줄바꿈 형식 적용
+                        const formattedSummary = formatTextWithLineBreaks(selectedPost.content);
+                        resultContent.textContent = `${index + 1}번째 글 원문 가져오기에 실패했습니다. 요약본을 표시합니다:\n\n${formattedSummary}`;
+                    }
+                }
+                
+                // AI 생성 버튼들 표시
+                const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+                const geminiGenerateBtn = document.getElementById('geminiGenerateBtn');
+                const aiPromptSection = document.getElementById('aiPromptSection');
+                aiGenerateBtn.style.display = 'block';
+                geminiGenerateBtn.style.display = 'block';
+                aiPromptSection.style.display = 'block';
+                
+                // 결과 섹션으로 스크롤
+                result.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('원문 가져오기 오류:', error);
+                // 오류 시 기존 요약본도 줄바꿈 형식 적용
+                const formattedErrorSummary = formatTextWithLineBreaks(selectedPost.content);
+                resultContent.textContent = `${index + 1}번째 글 가져오기 중 오류가 발생했습니다. 요약본을 표시합니다:\n\n${formattedErrorSummary}`;
+            } finally {
+                // 버튼 상태 복원
+                const buttons = document.querySelectorAll('.blog-select-btn');
+                buttons.forEach((btn, btnIndex) => {
+                    btn.disabled = false;
+                    // 각 버튼의 원래 텍스트 복원
+                    const buttonTexts = [
+                        '📝 첫번째내용가져오기',
+                        '📄 두번째내용가져오기', 
+                        '📋 세번째내용가져오기',
+                        '📚 처음3개모두가져오기'
+                    ];
+                    if (btnIndex < buttonTexts.length) {
+                        btn.innerHTML = buttonTexts[btnIndex];
+                    }
+                });
+            }
+        }
+        
+        // 여러 블로그 동시 스크래핑 함수
+        async function scrapeMultipleBlogs() {
+            if (fetchedBlogPosts.length === 0) {
+                alert('먼저 블로그 글을 가져와주세요.');
+                return;
+            }
+            
+            const resultContent = document.getElementById('resultContent');
+            const result = document.getElementById('result');
+            
+            // 최대 3개 또는 사용 가능한 블로그 수만큼
+            const blogsToScrape = Math.min(3, fetchedBlogPosts.length);
+            
+            // 모든 버튼 비활성화
+            const buttons = document.querySelectorAll('.blog-select-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // 마지막 버튼을 로딩 상태로
+            const allBlogsBtn = buttons[buttons.length - 1];
+            allBlogsBtn.innerHTML = '🔄 모두 가져오는 중...';
+            
+            // 로딩 표시
+            resultContent.textContent = `처음 ${blogsToScrape}개 블로그의 원문을 가져오는 중입니다...`;
+            result.style.display = 'block';
+            
+            try {
+                let combinedContent = '';
+                let successCount = 0;
+                
+                for (let i = 0; i < blogsToScrape; i++) {
+                    const currentPost = fetchedBlogPosts[i];
+                    resultContent.textContent = `${i + 1}번째 블로그 가져오는 중... (${i + 1}/${blogsToScrape})`;
+                    
+                    try {
+                        // 원문 스크래핑 시도
+                        const scrapingResponse = await fetch('/api/scrape-blog-content', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 
+                                url: currentPost.link,
+                                title: currentPost.title
+                            })
+                        });
+                        
+                        const scrapingData = await scrapingResponse.json();
+                        
+                        let blogContent = '';
+                        
+                        if (scrapingData.success && scrapingData.source === 'direct_scraping' && scrapingData.length > 200) {
+                            blogContent = formatTextWithLineBreaks(scrapingData.content);
+                            successCount++;
+                        } else {
+                            // 스크래핑 실패 시 확장 검색 시도
+                            try {
+                                const response = await fetch('/api/fetch-full-content', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ 
+                                        url: currentPost.link,
+                                        title: currentPost.title
+                                    })
+                                });
+                                
+                                const data = await response.json();
+                                
+                                if (data.success) {
+                                    blogContent = formatTextWithLineBreaks(data.content);
+                                    successCount++;
+                                } else {
+                                    // 대체 요약본 사용
+                                    blogContent = formatTextWithLineBreaks(currentPost.content);
+                                }
+                            } catch (error) {
+                                blogContent = formatTextWithLineBreaks(currentPost.content);
+                            }
+                        }
+                        
+                        // 각 블로그 내용을 구분자와 함께 추가
+                        combinedContent += `\n\n=== ${i + 1}번째 블로그: ${currentPost.title.replace(/<[^>]*>/g, '')} ===\n\n`;
+                        combinedContent += blogContent + '\n\n';
+                        
+                    } catch (error) {
+                        console.error(`${i + 1}번째 블로그 가져오기 실패:`, error);
+                        // 실패한 경우 요약본으로 대체
+                        combinedContent += `\n\n=== ${i + 1}번째 블로그: ${currentPost.title.replace(/<[^>]*>/g, '')} (요약본) ===\n\n`;
+                        combinedContent += formatTextWithLineBreaks(currentPost.content) + '\n\n';
+                    }
+                }
+                
+                // 최종 결과 표시
+                const finalContent = `처음 ${blogsToScrape}개 블로그 내용 (원문 ${successCount}개, 요약 ${blogsToScrape - successCount}개)\n` + combinedContent.trim();
+                resultContent.textContent = finalContent;
+                
+                // AI 생성 버튼들 표시
+                const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+                const geminiGenerateBtn = document.getElementById('geminiGenerateBtn');
+                const aiPromptSection = document.getElementById('aiPromptSection');
+                aiGenerateBtn.style.display = 'block';
+                geminiGenerateBtn.style.display = 'block';
+                aiPromptSection.style.display = 'block';
+                
+                // 결과 섹션으로 스크롤
+                result.scrollIntoView({ behavior: 'smooth' });
+                
+                console.log(`[INFO] 다중 블로그 스크래핑 완료: ${successCount}/${blogsToScrape} 성공`);
+                
+            } catch (error) {
+                console.error('다중 블로그 가져오기 오류:', error);
+                resultContent.textContent = `다중 블로그 가져오기 중 오류가 발생했습니다: ${error.message}`;
+            } finally {
+                // 버튼 상태 복원
+                const buttons = document.querySelectorAll('.blog-select-btn');
+                buttons.forEach((btn, btnIndex) => {
+                    btn.disabled = false;
+                    const buttonTexts = [
+                        '📝 첫번째내용가져오기',
+                        '📄 두번째내용가져오기', 
+                        '📋 세번째내용가져오기',
+                        '📚 처음3개모두가져오기'
+                    ];
+                    if (btnIndex < buttonTexts.length) {
+                        btn.innerHTML = buttonTexts[btnIndex];
+                    }
+                });
+            }
+        }
+
+        function getCompetitionText(competition) {
+            switch(competition) {
+                case 'low': return '낮음';
+                case 'medium': return '중간';
+                case 'high': return '높음';
+                default: return '중간';
+            }
+        }
+
+        let selectedKeywordForChoice = '';
+
+        function selectKeyword(keyword) {
+            // 선택된 키워드를 저장하고 모달창 표시
+            selectedKeywordForChoice = keyword;
+            document.getElementById('selectedKeywordText').textContent = keyword;
+            document.getElementById('keywordChoiceModal').style.display = 'block';
+        }
+
+        function closeKeywordChoiceModal() {
+            document.getElementById('keywordChoiceModal').style.display = 'none';
+            selectedKeywordForChoice = '';
+        }
+
+        function applyToMainSearch() {
+            if (selectedKeywordForChoice) {
+                // 본문 검색키워드창에 입력하고 블로그 글 가져오기 실행
+                document.getElementById('keyword').value = selectedKeywordForChoice;
+                closeKeywordChoiceModal();
+                // 키워드발굴 화면에서 메인으로 이동
+                if (document.getElementById('keywordDiscoveryPage').style.display === 'block') {
+                    hideKeywordDiscovery();
+                }
+                // 자동으로 블로그 글 가져오기 실행
+                setTimeout(() => {
+                    fetchBlogs();
+                }, 300);
+            }
+        }
+
+        function applyToKeywordDiscovery() {
+            if (selectedKeywordForChoice) {
+                // 키워드발굴 입력창에 입력하고 키워드 발굴 재실행
+                document.getElementById('keywordDiscoveryInput').value = selectedKeywordForChoice;
+                closeKeywordChoiceModal();
+                // 자동으로 키워드 발굴 실행
+                setTimeout(() => {
+                    startKeywordDiscovery();
+                }, 300);
+            }
+        }
+        
+        // AI로 글생성하기 함수 (스크랩된 글 기반)
+        async function generateAIContent() {
+            const aiGenerateBtn = document.getElementById('aiGenerateBtn');
+            const aiResult = document.getElementById('aiResult');
+            const aiResultContent = document.getElementById('aiResultContent');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (!resultContent.textContent) {
+                alert('먼저 스크랩된 글이 있어야 AI로 글을 생성할 수 있습니다.');
+                return;
+            }
+            
+            // 버튼 비활성화 및 로딩 상태
+            aiGenerateBtn.disabled = true;
+            aiGenerateBtn.innerHTML = '🔄 AI가 글을 생성하는 중...';
+            
+            // AI 결과 섹션 표시
+            aiResult.style.display = 'block';
+            
+            // 첫번째 생성된글 기반 추가 생성 버튼들 표시
+            const secondGenerationButtons = document.getElementById('secondGenerationButtons');
+            secondGenerationButtons.style.display = 'block';
+            aiResultContent.textContent = 'AI가 스크랩된 글을 기반으로 새로운 블로그 글을 생성하고 있습니다...';
+            
+            try {
+                // 현재 키워드 가져오기
+                const keyword = document.getElementById('keyword').value.trim();
+                
+                // AI 프롬프트 가져오기 (비어있어도 됨)
+                const aiPromptTextarea = document.getElementById('aiPrompt');
+                const aiPrompt = aiPromptTextarea ? aiPromptTextarea.value.trim() : '';
+                
+                // 스크랩된 글 내용 가져오기
+                let scrapedContent = resultContent.textContent;
+                
+                // 텍스트 대체 기능
+                const replaceText = document.getElementById('replaceText').value.trim();
+                const newText = document.getElementById('newText').value.trim();
+                
+                if (replaceText && newText) {
+                    const originalLength = scrapedContent.length;
+                    scrapedContent = scrapedContent.replace(new RegExp(replaceText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), newText);
+                    console.log(`[DEBUG] 텍스트 대체: "${replaceText}" → "${newText}"`);
+                    console.log(`[DEBUG] 대체 후 글 길이 변화: ${originalLength}자 → ${scrapedContent.length}자`);
+                }
+                
+                console.log(`[DEBUG] 최종 스크랩된 글 길이: ${scrapedContent.length}자`);
+                console.log(`[DEBUG] AI 프롬프트: ${aiPrompt || '(비어있음 - 30% 변경 모드)'}`);
+                
+                // 서버에 스크랩 기반 AI 글 생성 요청
+                const response = await fetch('/api/generate-ai-from-scraped', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        scrapedContent: scrapedContent,
+                        aiPrompt: aiPrompt,
+                        keyword: keyword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // AI 생성 글 표시
+                    aiResultContent.textContent = data.content;
+                    
+                    // 결과 메시지 추가
+                    if (data.message) {
+                        aiResultContent.textContent += `\n\n※ ${data.message}`;
+                    }
+                    
+                    // 비교 버튼 표시
+                    const compareBtn = document.getElementById('compareBtn');
+                    compareBtn.style.display = 'block';
+                    
+                    // AI 결과 섹션으로 스크롤
+                    aiResult.scrollIntoView({ behavior: 'smooth' });
+                    
+                    console.log(`[INFO] AI 생성 완료: ${data.generatedLength}자 (원본: ${data.originalLength}자)`);
+                } else {
+                    throw new Error(data.error || 'AI 글 생성에 실패했습니다.');
+                }
+                
+            } catch (error) {
+                console.error('AI 글 생성 오류:', error);
+                aiResultContent.textContent = `AI 글 생성에 실패했습니다: ${error.message}`;
+            } finally {
+                // 버튼 상태 복원
+                aiGenerateBtn.disabled = false;
+                aiGenerateBtn.innerHTML = '🤖 Claude로 글생성하기';
+            }
+        }
+
+        // Gemini로 글생성하기 함수
+        async function generateGeminiContent() {
+            const geminiGenerateBtn = document.getElementById('geminiGenerateBtn');
+            const aiResult = document.getElementById('aiResult');
+            const aiResultContent = document.getElementById('aiResultContent');
+            const resultContent = document.getElementById('resultContent');
+            
+            if (!resultContent.textContent) {
+                alert('먼저 스크랩된 글이 있어야 Gemini로 글을 생성할 수 있습니다.');
+                return;
+            }
+            
+            // 버튼 비활성화 및 로딩 상태
+            geminiGenerateBtn.disabled = true;
+            geminiGenerateBtn.innerHTML = '🔄 Gemini가 글을 생성하는 중...';
+            
+            // AI 결과 섹션 표시
+            aiResult.style.display = 'block';
+            
+            // 첫번째 생성된글 기반 추가 생성 버튼들 표시
+            const secondGenerationButtons = document.getElementById('secondGenerationButtons');
+            secondGenerationButtons.style.display = 'block';
+            aiResultContent.textContent = 'Gemini가 스크랩된 글을 기반으로 새로운 블로그 글을 생성하고 있습니다...';
+            
+            try {
+                // 현재 키워드 가져오기
+                const keyword = document.getElementById('keyword').value.trim();
+                
+                // AI 프롬프트 가져오기 (비어있어도 됨)
+                const aiPromptTextarea = document.getElementById('aiPrompt');
+                const aiPrompt = aiPromptTextarea ? aiPromptTextarea.value.trim() : '';
+                
+                // 스크랩된 글 내용 가져오기
+                let scrapedContent = resultContent.textContent;
+                
+                // 텍스트 대체 기능
+                const replaceText = document.getElementById('replaceText').value.trim();
+                const newText = document.getElementById('newText').value.trim();
+                
+                if (replaceText && newText) {
+                    const originalLength = scrapedContent.length;
+                    scrapedContent = scrapedContent.replace(new RegExp(replaceText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), newText);
+                    console.log(`[DEBUG] Gemini 텍스트 대체: "${replaceText}" → "${newText}"`);
+                    console.log(`[DEBUG] Gemini 대체 후 글 길이 변화: ${originalLength}자 → ${scrapedContent.length}자`);
+                }
+                
+                console.log(`[DEBUG] Gemini 최종 스크랩된 글 길이: ${scrapedContent.length}자`);
+                console.log(`[DEBUG] Gemini AI 프롬프트: ${aiPrompt || '(비어있음 - 30% 변경 모드)'}`);
+                
+                // 서버에 Gemini 기반 AI 글 생성 요청
+                const response = await fetch('/api/generate-gemini-from-scraped', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        scrapedContent: scrapedContent,
+                        aiPrompt: aiPrompt,
+                        keyword: keyword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Gemini 생성 글 표시
+                    aiResultContent.textContent = data.content;
+                    
+                    // 결과 메시지 추가
+                    if (data.message) {
+                        aiResultContent.textContent += `\n\n※ ${data.message}`;
+                    }
+                    
+                    // 비교 버튼 표시
+                    const compareBtn = document.getElementById('compareBtn');
+                    compareBtn.style.display = 'block';
+                    
+                    console.log(`[INFO] Gemini AI 글 생성 완료: ${data.content.length}자`);
+                    
+                    // 결과 섹션으로 스크롤
+                    aiResult.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(data.error || 'Gemini 글 생성에 실패했습니다.');
+                }
+                
+            } catch (error) {
+                console.error('Gemini 글 생성 오류:', error);
+                aiResultContent.textContent = `Gemini 글 생성에 실패했습니다: ${error.message}`;
+            } finally {
+                // 버튼 상태 복원
+                geminiGenerateBtn.disabled = false;
+                geminiGenerateBtn.innerHTML = '💎 Gemini로 글생성하기';
+            }
+        }
+        
+        // 원문과 비교하기 함수
+        function compareTexts() {
+            const resultContent = document.getElementById('resultContent');
+            const aiResultContent = document.getElementById('aiResultContent');
+            const comparisonResult = document.getElementById('comparisonResult');
+            const comparisonContent = document.getElementById('comparisonContent');
+            
+            if (!resultContent.textContent || !aiResultContent.textContent) {
+                alert('스크랩된 글과 AI 생성 글이 모두 있어야 비교할 수 있습니다.');
+                return;
+            }
+            
+            console.log('[DEBUG] 전체 문맥 기반 비교 시작');
+            
+            // 원문과 AI 생성글 전체 텍스트
+            const originalText = resultContent.textContent.trim();
+            const aiText = aiResultContent.textContent
+                .replace(/\n\n※.*$/, '') // 메시지 부분 제거
+                .trim();
+            
+            // AI 텍스트에서 원문과 유사한 부분을 찾아서 빨간색으로 표시
+            const highlightedAiText = highlightSimilarParts(originalText, aiText);
+            
+            // 전체 유사도 계산
+            const similarity = calculateAdvancedSimilarity(originalText, aiText);
+            
+            // 비교 결과 HTML 생성
+            let comparisonHTML = `
+                <div style="margin-bottom: 20px; text-align: center;">
+                    <p><strong>원문:</strong> ${originalText.length}자</p>
+                    <p><strong>AI 생성글:</strong> ${aiText.length}자</p>
+                    <p><strong>전체 문맥 유사도:</strong> ${similarity.toFixed(1)}%</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #333; margin-bottom: 10px;">📄 원문</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; line-height: 1.8; border-left: 4px solid #6c757d;">
+                        ${formatTextWithLineBreaks(originalText)}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #dc3545; margin-bottom: 10px;">🤖 AI 생성글 (유사 부분은 <span style="color: red;">빨간색</span>으로 표시)</h4>
+                    <div style="background: #fff5f5; padding: 20px; border-radius: 8px; line-height: 1.8; border-left: 4px solid #dc3545;">
+                        ${highlightedAiText}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; text-align: center;">
+                    <h4 style="margin: 0 0 10px 0; color: #1976d2;">📊 분석 결과</h4>
+                    <p style="margin: 5px 0;"><strong>문맥적 유사도:</strong> ${similarity.toFixed(1)}%</p>
+                    <p style="margin: 5px 0;"><strong>독창성:</strong> ${(100 - similarity).toFixed(1)}%</p>
+                    <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                        ${similarity > 80 ? '매우 유사한 내용' : 
+                          similarity > 60 ? '상당히 유사한 내용' : 
+                          similarity > 40 ? '부분적으로 유사한 내용' : '대부분 다른 내용'}
+                    </p>
+                </div>
+            `;
+            
+            comparisonContent.innerHTML = comparisonHTML;
+            comparisonResult.style.display = 'block';
+            
+            // 비교 결과로 스크롤
+            comparisonResult.scrollIntoView({ behavior: 'smooth' });
+            
+            console.log(`[INFO] 문맥 기반 비교 완료: 유사도 ${similarity.toFixed(1)}%`);
+        }
+        
+        // 고급 문맥 기반 유사도 계산 함수
+        function calculateAdvancedSimilarity(text1, text2) {
+            // 텍스트를 단어/구문 단위로 분석
+            const words1 = extractWords(text1);
+            const words2 = extractWords(text2);
+            const phrases1 = extractPhrases(text1);
+            const phrases2 = extractPhrases(text2);
+            
+            // 단어 레벨 유사도
+            const wordSimilarity = calculateWordSimilarity(words1, words2);
+            
+            // 구문 레벨 유사도  
+            const phraseSimilarity = calculatePhraseSimilarity(phrases1, phrases2);
+            
+            // 전체 구조 유사도
+            const structureSimilarity = calculateStructureSimilarity(text1, text2);
+            
+            // 가중 평균으로 최종 유사도 계산
+            const finalSimilarity = (wordSimilarity * 0.4 + phraseSimilarity * 0.4 + structureSimilarity * 0.2);
+            
+            return Math.max(0, Math.min(100, finalSimilarity));
+        }
+
+        // 유사한 부분을 빨간색으로 표시하는 함수
+        function highlightSimilarParts(originalText, aiText) {
+            // AI 텍스트를 문장 단위로 분리
+            const aiSentences = aiText.split(/([.!?]|\.\s)/g).filter(s => s.trim().length > 0);
+            let highlightedText = '';
+            
+            for (let i = 0; i < aiSentences.length; i++) {
+                const sentence = aiSentences[i];
+                if (sentence.match(/^[.!?]$/) || sentence.match(/^\.\s$/)) {
+                    highlightedText += sentence;
+                    continue;
+                }
+                
+                // 각 문장이 원문과 얼마나 유사한지 확인
+                const similarity = findBestMatchSimilarity(sentence, originalText);
+                
+                if (similarity > 30) { // 30% 이상 유사하면 빨간색 표시
+                    highlightedText += `<span style="color: red; font-weight: 500;">${sentence}</span>`;
+                } else {
+                    highlightedText += sentence;
+                }
+            }
+            
+            return formatTextWithLineBreaks(highlightedText);
+        }
+
+        // 문장과 원문 전체에서 가장 유사한 부분 찾기
+        function findBestMatchSimilarity(sentence, originalText) {
+            const cleanSentence = sentence.replace(/[^\w가-힣\s]/g, '').trim();
+            if (cleanSentence.length < 5) return 0;
+            
+            // 원문을 문장 단위로 분리하여 각각과 비교
+            const originalSentences = originalText.split(/[.!?]/).filter(s => s.trim().length > 5);
+            let maxSimilarity = 0;
+            
+            for (const origSentence of originalSentences) {
+                const similarity = calculateSentenceSimilarity(cleanSentence, origSentence.trim());
+                maxSimilarity = Math.max(maxSimilarity, similarity);
+            }
+            
+            // 연속된 단어 매칭도 확인
+            const words = cleanSentence.split(/\s+/);
+            for (const word of words) {
+                if (word.length > 2 && originalText.includes(word)) {
+                    maxSimilarity = Math.max(maxSimilarity, 40);
+                }
+            }
+            
+            return maxSimilarity;
+        }
+
+        // 두 문장 간의 유사도 계산
+        function calculateSentenceSimilarity(sentence1, sentence2) {
+            const words1 = sentence1.split(/\s+/).filter(w => w.length > 1);
+            const words2 = sentence2.split(/\s+/).filter(w => w.length > 1);
+            
+            if (words1.length === 0 || words2.length === 0) return 0;
+            
+            let matchCount = 0;
+            for (const word1 of words1) {
+                for (const word2 of words2) {
+                    if (word1 === word2 || (word1.length > 2 && word2.includes(word1)) || (word2.length > 2 && word1.includes(word2))) {
+                        matchCount++;
+                        break;
+                    }
+                }
+            }
+            
+            return (matchCount / Math.max(words1.length, words2.length)) * 100;
+        }
+
+        // 텍스트에서 단어 추출
+        function extractWords(text) {
+            return text.replace(/[^\w가-힣\s]/g, ' ')
+                      .split(/\s+/)
+                      .filter(word => word.length > 1)
+                      .map(word => word.toLowerCase());
+        }
+
+        // 텍스트에서 구문 추출 (2-3 단어 조합)
+        function extractPhrases(text) {
+            const words = extractWords(text);
+            const phrases = [];
+            
+            for (let i = 0; i < words.length - 1; i++) {
+                phrases.push(words[i] + ' ' + words[i + 1]);
+                if (i < words.length - 2) {
+                    phrases.push(words[i] + ' ' + words[i + 1] + ' ' + words[i + 2]);
+                }
+            }
+            
+            return phrases;
+        }
+
+        // 단어 레벨 유사도 계산
+        function calculateWordSimilarity(words1, words2) {
+            const set1 = new Set(words1);
+            const set2 = new Set(words2);
+            const intersection = new Set([...set1].filter(x => set2.has(x)));
+            const union = new Set([...set1, ...set2]);
+            
+            return union.size > 0 ? (intersection.size / union.size) * 100 : 0;
+        }
+
+        // 구문 레벨 유사도 계산
+        function calculatePhraseSimilarity(phrases1, phrases2) {
+            const set1 = new Set(phrases1);
+            const set2 = new Set(phrases2);
+            const intersection = new Set([...set1].filter(x => set2.has(x)));
+            const union = new Set([...set1, ...set2]);
+            
+            return union.size > 0 ? (intersection.size / union.size) * 100 : 0;
+        }
+
+        // 구조적 유사도 계산
+        function calculateStructureSimilarity(text1, text2) {
+            const sentences1 = text1.split(/[.!?]/).filter(s => s.trim().length > 0);
+            const sentences2 = text2.split(/[.!?]/).filter(s => s.trim().length > 0);
+            
+            const lengthDiff = Math.abs(sentences1.length - sentences2.length);
+            const maxLength = Math.max(sentences1.length, sentences2.length);
+            
+            return maxLength > 0 ? Math.max(0, (1 - lengthDiff / maxLength) * 100) : 0;
+        }
+        
+        // AI 생성 글 복사 함수
+        async function copyAIToClipboard() {
+            const aiCopyBtn = document.getElementById('aiCopyBtn');
+            const aiResultContent = document.getElementById('aiResultContent');
+            
+            if (!aiResultContent.textContent) {
+                alert('복사할 AI 생성 글이 없습니다.');
+                return;
+            }
+            
+            try {
+                // 최신 브라우저의 Clipboard API 사용
+                await navigator.clipboard.writeText(aiResultContent.textContent);
+                
+                // 버튼 상태 변경
+                aiCopyBtn.textContent = '✅ 복사완료!';
+                aiCopyBtn.classList.add('copied');
+                
+                // 2초 후 원래 상태로 복원
+                setTimeout(() => {
+                    aiCopyBtn.textContent = '📋 복사하기';
+                    aiCopyBtn.classList.remove('copied');
+                }, 2000);
+                
+            } catch (err) {
+                // Clipboard API가 지원되지 않는 경우 대체 방법 사용
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = aiResultContent.textContent;
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    aiCopyBtn.textContent = '✅ 복사완료!';
+                    aiCopyBtn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        aiCopyBtn.textContent = '📋 복사하기';
+                        aiCopyBtn.classList.remove('copied');
+                    }, 2000);
+                    
+                } catch (fallbackErr) {
+                    console.error('복사 실패:', fallbackErr);
+                    alert('복사에 실패했습니다. 수동으로 텍스트를 선택하여 복사해주세요.');
+                }
+            }
+        }
+
+        // 두번째 AI 생성 글 복사 함수
+        async function copyAI2ToClipboard() {
+            const aiCopyBtn2 = document.getElementById('aiCopyBtn2');
+            const aiResultContent2 = document.getElementById('aiResultContent2');
+            
+            if (!aiResultContent2.textContent) {
+                alert('복사할 AI 생성 글이 없습니다.');
+                return;
+            }
+            
+            try {
+                // 최신 브라우저의 Clipboard API 사용
+                await navigator.clipboard.writeText(aiResultContent2.textContent);
+                
+                // 버튼 상태 변경
+                aiCopyBtn2.textContent = '✅ 복사완료!';
+                aiCopyBtn2.classList.add('copied');
+                
+                // 2초 후 원래 상태로 복원
+                setTimeout(() => {
+                    aiCopyBtn2.textContent = '📋 복사하기';
+                    aiCopyBtn2.classList.remove('copied');
+                }, 2000);
+                
+            } catch (err) {
+                // Clipboard API가 지원되지 않는 경우 대체 방법 사용
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = aiResultContent2.textContent;
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    aiCopyBtn2.textContent = '✅ 복사완료!';
+                    aiCopyBtn2.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        aiCopyBtn2.textContent = '📋 복사하기';
+                        aiCopyBtn2.classList.remove('copied');
+                    }, 2000);
+                    
+                } catch (fallbackErr) {
+                    console.error('복사 실패:', fallbackErr);
+                    alert('복사에 실패했습니다. 수동으로 텍스트를 선택하여 복사해주세요.');
+                }
+            }
+        }
+
+        // 두번째 AI 생성 글과 원문 비교 함수
+        function compareTexts2() {
+            const resultContent = document.getElementById('resultContent');
+            const aiResultContent2 = document.getElementById('aiResultContent2');
+            const comparisonResult = document.getElementById('comparisonResult');
+            const comparisonContent = document.getElementById('comparisonContent');
+            
+            if (!resultContent.textContent || !aiResultContent2.textContent) {
+                alert('스크랩된 글과 AI 생성 글이 모두 있어야 비교할 수 있습니다.');
+                return;
+            }
+            
+            console.log('[DEBUG] 두번째 글 전체 문맥 기반 비교 시작');
+            
+            // 원문과 AI 생성글 전체 텍스트
+            const originalText = resultContent.textContent.trim();
+            const aiText = aiResultContent2.textContent
+                .replace(/\n\n※.*$/, '') // 메시지 부분 제거
+                .trim();
+            
+            // AI 텍스트에서 원문과 유사한 부분을 찾아서 빨간색으로 표시
+            const highlightedAiText = highlightSimilarParts(originalText, aiText);
+            
+            // 전체 유사도 계산
+            const similarity = calculateAdvancedSimilarity(originalText, aiText);
+            
+            // 비교 결과 HTML 생성
+            let comparisonHTML = `
+                <div style="margin-bottom: 20px; text-align: center;">
+                    <p><strong>원문:</strong> ${originalText.length}자</p>
+                    <p><strong>두번째 AI 생성글:</strong> ${aiText.length}자</p>
+                    <p><strong>전체 문맥 유사도:</strong> ${similarity.toFixed(1)}%</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #333; margin-bottom: 10px;">📄 원문</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; line-height: 1.8; border-left: 4px solid #6c757d;">
+                        ${formatTextWithLineBreaks(originalText)}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #333; margin-bottom: 10px;">✨ 두번째 AI 생성글 (유사한 부분은 <span style="color: red;">빨간색</span>으로 표시)</h4>
+                    <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; line-height: 1.8; border-left: 4px solid #667eea;">
+                        ${highlightedAiText}
+                    </div>
+                </div>
+            `;
+            
+            comparisonContent.innerHTML = comparisonHTML;
+            comparisonResult.style.display = 'block';
+            
+            // 스크롤로 비교 결과까지 이동
+            comparisonResult.scrollIntoView({ behavior: 'smooth' });
+            
+            console.log(`[DEBUG] 두번째 글 비교 완료 - 유사도: ${similarity.toFixed(1)}%`);
+        }
+
+        // 첫번째 생성된 글을 기반으로 Claude로 새로운 글 생성
+        async function generateFromFirstClaude() {
+            const aiResultContent = document.getElementById('aiResultContent');
+            const aiPrompt = document.getElementById('aiPrompt').value.trim();
+            const aiResultContent2 = document.getElementById('aiResultContent2');
+            const aiResult2 = document.getElementById('aiResult2');
+            const generateFromFirstClaudeBtn = document.getElementById('generateFromFirstClaudeBtn');
+            const compareBtn2 = document.getElementById('compareBtn2');
+            
+            if (!aiResultContent.textContent) {
+                alert('먼저 첫번째 AI 생성 글이 있어야 합니다.');
+                return;
+            }
+            
+            if (!aiPrompt) {
+                alert('AI 프롬프트를 입력해주세요.');
+                return;
+            }
+            
+            // 버튼 상태 변경
+            generateFromFirstClaudeBtn.disabled = true;
+            generateFromFirstClaudeBtn.innerHTML = '🔄 Claude가 글을 생성하는 중...';
+            
+            // 두번째 AI 결과 섹션 표시
+            aiResult2.style.display = 'block';
+            aiResultContent2.textContent = 'Claude가 첫번째 생성된 글을 기반으로 새로운 블로그 글을 생성하고 있습니다...';
+            
+            try {
+                const keyword = document.getElementById('keyword').value.trim();
+                const firstGeneratedContent = aiResultContent.textContent
+                    .replace(/\n\n※.*$/, '') // 메시지 부분 제거
+                    .trim();
+                
+                console.log('[DEBUG] 첫번째 생성된 글 기반 Claude 생성 시작');
+                
+                const response = await fetch('/api/generate-ai-from-scraped', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        scrapedContent: firstGeneratedContent,
+                        aiPrompt: aiPrompt,
+                        keyword: keyword,
+                        useFirstContent: true  // 첫번째 생성된 글 기반임을 표시
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const formattedContent = formatTextWithLineBreaks(data.content);
+                    aiResultContent2.innerHTML = formattedContent;
+                    
+                    if (data.message) {
+                        aiResultContent2.innerHTML += `<br><br>※ ${data.message}`;
+                    }
+                    
+                    // 비교 버튼 표시
+                    compareBtn2.style.display = 'block';
+                    
+                    console.log('[DEBUG] 첫번째 생성된 글 기반 Claude 생성 완료');
+                } else {
+                    aiResultContent2.textContent = `Claude 글 생성에 실패했습니다: ${data.error}`;
+                    console.error('[ERROR] Claude 생성 실패:', data.error);
+                }
+                
+            } catch (error) {
+                console.error('[ERROR] Claude 생성 중 오류:', error);
+                aiResultContent2.textContent = 'Claude 글 생성 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.';
+            } finally {
+                // 버튼 상태 복원
+                generateFromFirstClaudeBtn.disabled = false;
+                generateFromFirstClaudeBtn.innerHTML = '🤖 첫번째 생성된글로 Claude 글작성하기';
+            }
+        }
+
+        // 첫번째 생성된 글을 기반으로 Gemini로 새로운 글 생성
+        async function generateFromFirstGemini() {
+            const aiResultContent = document.getElementById('aiResultContent');
+            const aiPrompt = document.getElementById('aiPrompt').value.trim();
+            const aiResultContent2 = document.getElementById('aiResultContent2');
+            const aiResult2 = document.getElementById('aiResult2');
+            const generateFromFirstGeminiBtn = document.getElementById('generateFromFirstGeminiBtn');
+            const compareBtn2 = document.getElementById('compareBtn2');
+            
+            if (!aiResultContent.textContent) {
+                alert('먼저 첫번째 AI 생성 글이 있어야 합니다.');
+                return;
+            }
+            
+            if (!aiPrompt) {
+                alert('AI 프롬프트를 입력해주세요.');
+                return;
+            }
+            
+            // 버튼 상태 변경
+            generateFromFirstGeminiBtn.disabled = true;
+            generateFromFirstGeminiBtn.innerHTML = '🔄 Gemini가 글을 생성하는 중...';
+            
+            // 두번째 AI 결과 섹션 표시
+            aiResult2.style.display = 'block';
+            aiResultContent2.textContent = 'Gemini가 첫번째 생성된 글을 기반으로 새로운 블로그 글을 생성하고 있습니다...';
+            
+            try {
+                const keyword = document.getElementById('keyword').value.trim();
+                const firstGeneratedContent = aiResultContent.textContent
+                    .replace(/\n\n※.*$/, '') // 메시지 부분 제거
+                    .trim();
+                
+                console.log('[DEBUG] 첫번째 생성된 글 기반 Gemini 생성 시작');
+                
+                const response = await fetch('/api/generate-gemini-from-scraped', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        scrapedContent: firstGeneratedContent,
+                        aiPrompt: aiPrompt,
+                        keyword: keyword,
+                        useFirstContent: true  // 첫번째 생성된 글 기반임을 표시
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const formattedContent = formatTextWithLineBreaks(data.content);
+                    aiResultContent2.innerHTML = formattedContent;
+                    
+                    if (data.message) {
+                        aiResultContent2.innerHTML += `<br><br>※ ${data.message}`;
+                    }
+                    
+                    // 비교 버튼 표시
+                    compareBtn2.style.display = 'block';
+                    
+                    console.log('[DEBUG] 첫번째 생성된 글 기반 Gemini 생성 완료');
+                } else {
+                    aiResultContent2.textContent = `Gemini 글 생성에 실패했습니다: ${data.error}`;
+                    console.error('[ERROR] Gemini 생성 실패:', data.error);
+                }
+                
+            } catch (error) {
+                console.error('[ERROR] Gemini 생성 중 오류:', error);
+                aiResultContent2.textContent = 'Gemini 글 생성 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.';
+            } finally {
+                // 버튼 상태 복원
+                generateFromFirstGeminiBtn.disabled = false;
+                generateFromFirstGeminiBtn.innerHTML = '💎 첫번째 생성된글로 Gemini 글작성하기';
+            }
+        }
+
+        // 모달 외부 클릭시 닫기
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLoginModal();
+            }
+        });
+
+        document.getElementById('settingsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettingsModal();
+            }
+        });
+
+        document.getElementById('keywordChoiceModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeKeywordChoiceModal();
+            }
+        });
+
+
+        // 키워드발굴 화면 관련 함수들
+        function showKeywordDiscovery() {
+            if (!currentUser) {
+                alert('로그인을 한 후에 사용하십시오');
+                return;
+            }
+            
+            const mainContainer = document.querySelector('.container');
+            const keywordDiscoveryPage = document.getElementById('keywordDiscoveryPage');
+            
+            mainContainer.style.display = 'none';
+            keywordDiscoveryPage.style.display = 'block';
+            
+            // 스크롤을 맨 위로
+            window.scrollTo(0, 0);
+        }
+
+        async function discoverNewKeywords() {
+            if (!currentUser) {
+                alert('로그인을 한 후에 사용하십시오');
+                return;
+            }
+
+            const newKeywordBtn = document.querySelector('.new-keyword-btn');
+            const discoveryResults = document.getElementById('discoveryResults');
+            
+            // 버튼 비활성화 및 로딩 상태
+            newKeywordBtn.disabled = true;
+            newKeywordBtn.innerHTML = '🔄 신규키워드 발굴 중...';
+            
+            try {
+                // 신규 키워드 발굴 API 호출
+                const [trendingResponse, emergingResponse, seasonalResponse] = await Promise.all([
+                    fetch('/api/new-keywords/trending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    }),
+                    fetch('/api/new-keywords/emerging', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    }),
+                    fetch('/api/new-keywords/seasonal', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    })
+                ]);
+
+                const [trendingData, emergingData, seasonalData] = await Promise.all([
+                    trendingResponse.json(),
+                    emergingResponse.json(),
+                    seasonalResponse.json()
+                ]);
+
+                // 신규키워드 결과 표시
+                displayNewKeywordResults(trendingData, emergingData, seasonalData);
+                discoveryResults.style.display = 'block';
+                discoveryResults.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('신규키워드 발굴 오류:', error);
+                alert('신규키워드 발굴 중 오류가 발생했습니다.');
+            } finally {
+                // 버튼 상태 복원
+                newKeywordBtn.disabled = false;
+                newKeywordBtn.innerHTML = '🆕 신규키워드 검색';
+            }
+        }
+
+        function displayNewKeywordResults(trendingData, emergingData, seasonalData) {
+            // 기본 분석에 신규키워드 개요 표시
+            const basicAnalysis = document.getElementById('basicAnalysis');
+            basicAnalysis.innerHTML = `
+                <div style="padding: 20px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; border-radius: 12px; text-align: center;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 1.4em;">🆕 신규키워드 발굴 결과</h3>
+                    <p style="margin: 0; font-size: 1.1em; opacity: 0.9;">최신 트렌드와 급상승 키워드를 발굴했습니다</p>
+                    <p style="margin: 10px 0 0 0; font-size: 0.9em; opacity: 0.8;">총 ${(trendingData.keywords?.length || 0) + (emergingData.keywords?.length || 0) + (seasonalData.keywords?.length || 0)}개의 신규 키워드를 발견했습니다</p>
+                </div>
+            `;
+
+            // 연관 키워드 → 트렌딩 키워드
+            const relatedKeywords = document.getElementById('relatedKeywords');
+            if (trendingData.success && trendingData.keywords) {
+                relatedKeywords.innerHTML = trendingData.keywords.slice(0, 15).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 10px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="selectNewKeyword('${kw.keyword}')">
+                        🔥 ${kw.keyword} <small>(+${kw.growth || '신규'})</small>
+                    </div>
+                `).join('');
+                // 제목 변경
+                document.querySelector('#relatedKeywords').parentElement.querySelector('h4').innerHTML = '🔥 트렌딩 키워드';
+            }
+
+            // 롱테일 키워드 → 급상승 키워드
+            const longTailKeywords = document.getElementById('longTailKeywords');
+            if (emergingData.success && emergingData.keywords) {
+                longTailKeywords.innerHTML = emergingData.keywords.slice(0, 12).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 10px 15px; background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%); color: white; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="selectNewKeyword('${kw.keyword}')">
+                        📈 ${kw.keyword} <small>(${kw.searchVolume || 'N/A'})</small>
+                    </div>
+                `).join('');
+                // 제목 변경
+                document.querySelector('#longTailKeywords').parentElement.querySelector('h4').innerHTML = '📈 급상승 키워드';
+            }
+
+            // 급상승 키워드 → 계절성 키워드
+            const trendingKeywords = document.getElementById('trendingKeywords');
+            if (seasonalData.success && seasonalData.keywords) {
+                trendingKeywords.innerHTML = seasonalData.keywords.slice(0, 10).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 10px 15px; background: linear-gradient(135deg, #26d0ce 0%, #1a9bf0 100%); color: white; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer;" onclick="selectNewKeyword('${kw.keyword}')">
+                        🌟 ${kw.keyword} <small>(${kw.season || '시즌'})</small>
+                    </div>
+                `).join('');
+                // 제목 변경
+                document.querySelector('#trendingKeywords').parentElement.querySelector('h4').innerHTML = '🌟 계절성 키워드';
+            }
+        }
+
+        function selectNewKeyword(keyword) {
+            // 선택된 키워드를 저장하고 모달창 표시 (신규키워드도 동일한 모달 사용)
+            selectedKeywordForChoice = keyword;
+            document.getElementById('selectedKeywordText').textContent = keyword;
+            document.getElementById('keywordChoiceModal').style.display = 'block';
+        }
+
+        function hideKeywordDiscovery() {
+            const mainContainer = document.querySelector('.container');
+            const keywordDiscoveryPage = document.getElementById('keywordDiscoveryPage');
+            
+            keywordDiscoveryPage.style.display = 'none';
+            mainContainer.style.display = 'block';
+            
+            // 스크롤을 맨 위로
+            window.scrollTo(0, 0);
+        }
+
+        async function startKeywordDiscovery() {
+            const keywordInput = document.getElementById('keywordDiscoveryInput');
+            const keyword = keywordInput.value.trim();
+            
+            if (!keyword) {
+                alert('키워드를 입력해주세요.');
+                return;
+            }
+
+            const searchBtn = document.querySelector('.search-btn');
+            const discoveryResults = document.getElementById('discoveryResults');
+            
+            // 버튼 비활성화 및 로딩 상태
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '🔄 발굴 중...';
+            
+            try {
+                // 기본 분석, 연관 키워드, 롱테일, 트렌드 모두 한번에 요청
+                const [competitionResponse, relatedResponse, trendsResponse] = await Promise.all([
+                    fetch('/api/keyword-research/competition', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ keyword })
+                    }),
+                    fetch('/api/keyword-research/related', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ keyword })
+                    }),
+                    fetch('/api/keyword-research/trends', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ keyword })
+                    })
+                ]);
+
+                const [competitionData, relatedData, trendsData] = await Promise.all([
+                    competitionResponse.json(),
+                    relatedResponse.json(),
+                    trendsResponse.json()
+                ]);
+
+                // 결과 표시
+                displayDiscoveryResults(competitionData, relatedData, trendsData);
+                discoveryResults.style.display = 'block';
+                discoveryResults.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('키워드 발굴 오류:', error);
+                alert('키워드 발굴 중 오류가 발생했습니다.');
+            } finally {
+                // 버튼 상태 복원
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '🔍 키워드 발굴 시작';
+            }
+        }
+
+        function displayDiscoveryResults(competitionData, relatedData, trendsData) {
+            // 기본 분석 표시
+            const basicAnalysis = document.getElementById('basicAnalysis');
+            if (competitionData.success) {
+                const analysis = competitionData.analysis;
+                basicAnalysis.innerHTML = `
+                    <div style="padding: 15px; background: white; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                        <p><strong>검색량:</strong> ${analysis.searchVolume?.toLocaleString() || 'N/A'}</p>
+                        <p><strong>경쟁도:</strong> <span class="keyword-competition ${analysis.competition}">${getCompetitionText(analysis.competition)}</span></p>
+                        <p><strong>KEI 점수:</strong> ${analysis.keiScore || 'N/A'}</p>
+                        <p><strong>난이도:</strong> ${analysis.difficulty || 'N/A'}</p>
+                        <p><strong>추천도:</strong> ${analysis.recommendation || 'N/A'}</p>
+                    </div>
+                `;
+            }
+
+            // 연관 키워드 표시
+            const relatedKeywords = document.getElementById('relatedKeywords');
+            if (relatedData.success && relatedData.relatedKeywords) {
+                relatedKeywords.innerHTML = relatedData.relatedKeywords.slice(0, 10).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 8px 12px; background: #e3f2fd; border-radius: 20px; font-size: 14px; cursor: pointer;" onclick="selectKeyword('${kw.keyword}')">
+                        ${kw.keyword} <small>(${kw.searchVolume})</small>
+                    </div>
+                `).join('');
+            }
+
+            // 롱테일 키워드 표시
+            const longTailKeywords = document.getElementById('longTailKeywords');
+            if (relatedData.success && relatedData.longTailKeywords) {
+                longTailKeywords.innerHTML = relatedData.longTailKeywords.slice(0, 15).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 8px 12px; background: #f3e5f5; border-radius: 20px; font-size: 14px; cursor: pointer;" onclick="selectKeyword('${kw.keyword}')">
+                        ${kw.keyword} <small>(${kw.searchVolume})</small>
+                    </div>
+                `).join('');
+            }
+
+            // 급상승 키워드 표시
+            const trendingKeywords = document.getElementById('trendingKeywords');
+            if (trendsData.success && trendsData.trends) {
+                trendingKeywords.innerHTML = trendsData.trends.trendingKeywords?.slice(0, 10).map(kw => `
+                    <div style="display: inline-block; margin: 5px; padding: 8px 12px; background: #fff3e0; border-radius: 20px; font-size: 14px; cursor: pointer;" onclick="selectKeyword('${kw.keyword}')">
+                        ${kw.keyword} <small>(+${kw.growthRate}%)</small>
+                    </div>
+                `).join('') || '<p>급상승 키워드 데이터가 없습니다.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
