@@ -8,7 +8,7 @@ const admin = require('firebase-admin');
 const cheerio = require('cheerio');
 
 const app = express();
-const PORT = 3333;
+const PORT = process.env.PORT || 3333;
 
 // Firebase 초기화
 try {

@@ -31,3 +31,5 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. 검색 결과를 blogtop.txt에 저장
 4. 제미나이 AI로 SEO 최적화 블로그 글 생성 (2000자 내외)
 - claude.md
+- claude.md
+- readme.md
