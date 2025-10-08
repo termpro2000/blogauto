@@ -569,10 +569,25 @@ async function saveApiKeys(naverClientId, naverClientSecret, claudeApiKey, gemin
 
 async function loadApiKeys() {
     try {
+        // 1. 환경 변수에서 API 키 읽기 (Vercel 환경)
+        if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
+            console.log('환경 변수에서 API 키를 읽었습니다.');
+            return {
+                naverClientId: process.env.NAVER_CLIENT_ID,
+                naverClientSecret: process.env.NAVER_CLIENT_SECRET,
+                claudeApiKey: process.env.CLAUDE_API_KEY || '',
+                geminiApiKey: process.env.GEMINI_API_KEY || '',
+                lastUpdated: new Date().toISOString()
+            };
+        }
+        
+        // 2. 로컬 파일에서 API 키 읽기 (로컬 환경)
+        console.log('로컬 api.txt 파일에서 API 키를 읽습니다.');
         const data = await fs.promises.readFile('api.txt', 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        throw new Error('API 키 파일을 찾을 수 없습니다.');
+        console.error('API 키 로딩 오류:', error.message);
+        throw new Error('API 키를 찾을 수 없습니다. 환경 변수 또는 api.txt 파일을 확인해주세요.');
     }
 }
 
