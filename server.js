@@ -1847,6 +1847,11 @@ function getDefaultSeasonalKeywords() {
     }));
 }
 
+// 루트 경로 라우트 추가
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.listen(PORT, () => {
     console.log(`서버가 http://localhost:${PORT}에서 실행 중입니다.`);
 });
